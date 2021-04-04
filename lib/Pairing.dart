@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import 'BluetoothOn.dart';
 import 'FinalScreen.dart';
+import 'SiginScreen.dart';
+import 'main.dart';
 
 class Pairing extends StatefulWidget {
   @override

@@ -1,10 +1,17 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:flutter_bluetooth_serial_example/FinalScreen.dart';
+import 'package:flutter_bluetooth_serial_example/UI/ImageSlider.dart';
 import 'BluetoothDeviceListEntry.dart';
 import 'BluetoothOn.dart';
+import 'FinalPlay.dart';
+import 'main.dart';
 
 List availableSpeakers = ['M7','Bzoom','Roundo','HyperShock','M7','Bzoom','M7','Bzoom'];
 
@@ -21,11 +28,15 @@ class AvailableSpeakers extends StatefulWidget {
 }
 
 
-class _AvailableSpeakersState extends State<AvailableSpeakers> {
+class _AvailableSpeakersState extends State<AvailableSpeakers> with SingleTickerProviderStateMixin {
 
   StreamSubscription<BluetoothDiscoveryResult> _streamSubscription;
   List<BluetoothDiscoveryResult> results = List<BluetoothDiscoveryResult>();
   bool isDiscovering;
+  AnimationController shimmerController;
+  Animation shimmerAnimationOne;
+  Animation shimmerAnimationTwo;
+
 
   _AvailableSpeakersState();
 
@@ -37,6 +48,22 @@ class _AvailableSpeakersState extends State<AvailableSpeakers> {
     if (isDiscovering) {
       _startDiscovery();
     }
+    shimmerController =AnimationController(vsync: this,duration: Duration(milliseconds: 1500));
+    shimmerAnimationOne = ColorTween(begin: Colors.grey[700],end: Colors.white).animate(shimmerController);
+    shimmerAnimationTwo = ColorTween(begin: Colors.grey[100],end: Colors.white).animate(shimmerController);
+
+    shimmerController.forward();
+    shimmerController.addListener(() {
+      if(shimmerController.status ==AnimationStatus.completed){
+        shimmerController.reverse();
+      }
+      else if(shimmerController.status ==AnimationStatus.dismissed){
+        shimmerController.forward();
+      }
+      this.setState(() {
+
+      });
+    });
   }
 
   void _restartDiscovery() {
@@ -75,6 +102,39 @@ class _AvailableSpeakersState extends State<AvailableSpeakers> {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
+    return constantWidgets.availableScreenLayout(context,
+        isDiscovering ? "Searching" : "Available Devices",
+        isDiscovering ? Expanded(
+          child: ShaderMask(
+              shaderCallback: (rect) {
+                return LinearGradient(
+                  tileMode: TileMode.mirror,
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    shimmerAnimationOne.value,
+                    shimmerAnimationTwo.value
+                  ],
+                ).createShader(rect);
+              },
+              child: Icon(Icons.more_horiz_rounded, color: Colors.white,
+                size: SizeConfig.screenHeight * 0.15,)
+
+          ),
+        )
+            : ImageSlider(),
+      Icon(
+        Icons.search_outlined ,color: greenColor,size: 35,
+      ),
+      function: (){
+      setState(() {
+        isDiscovering=true;
+      });
+      },
+    );
+  }
+ /*{
 
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
@@ -103,7 +163,7 @@ class _AvailableSpeakersState extends State<AvailableSpeakers> {
                       device: result.device,
                       rssi: result.rssi,
                       onTap: () async {
-                       /* try {*/
+                        try {
                           bool bonded = false;
 
                           /// Disconnect Device
@@ -121,7 +181,9 @@ class _AvailableSpeakersState extends State<AvailableSpeakers> {
                                   .bondDeviceAtAddress(result.device.address);
                               print(
                                   'Bonding with ${result.device.address} has ${bonded ? 'succed' : 'failed'}.');
-                              Navigator.push(context, MaterialPageRoute(builder: (context)=>FinalScreen()));//TODO navigate only when connected successfully
+                              if(bonded!=false){
+                                return Navigator.push(context, MaterialPageRoute(builder: (context)=>FinalPlay()));
+                              }
 
                           }
                           setState(() {
@@ -136,7 +198,7 @@ class _AvailableSpeakersState extends State<AvailableSpeakers> {
                                 ),
                                 rssi: result.rssi);
                           });
-                        /*} catch (ex) {
+                        } catch (ex) {
                           showDialog(
                             context: context,
                             builder: (BuildContext context) {
@@ -154,7 +216,7 @@ class _AvailableSpeakersState extends State<AvailableSpeakers> {
                               );
                             },
                           );
-                        }*/
+                        }
                       },
                     );
                   }
@@ -167,7 +229,7 @@ class _AvailableSpeakersState extends State<AvailableSpeakers> {
             ? FittedBox(
           child: Container(
             margin: new EdgeInsets.all(16.0),
-            child: CircularProgressIndicator(
+            child: CircularProgressIndicator(    //TODO sometimes can't complete the discovery and keeps loading for infinite time
               valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
             ),
           ),
@@ -177,5 +239,5 @@ class _AvailableSpeakersState extends State<AvailableSpeakers> {
           onPressed: _restartDiscovery,
         ),
     );
-  }
+  }*/ /// do not remove this ,have to implement this code when backend work will start
 }

@@ -8,6 +8,8 @@ import 'ChatPage.dart';
 import 'DiscoveryPage.dart';
 import 'SelectBondedDevicePage.dart';
 import 'BluetoothOn.dart';
+import 'SiginScreen.dart';
+import 'main.dart';
 
 class SearchingSpeaker extends StatefulWidget {
 
@@ -36,6 +38,8 @@ class _SearchingSpeakerState extends State<SearchingSpeaker> {
           } else {
             print('Discovery -> no device selected');
           }
+          Navigator.of(context).pushReplacement(MaterialPageRoute(
+              builder: (BuildContext context) => AvailableSpeakers()));
         },
             /*() => Navigator.of(context).pushReplacement(MaterialPageRoute(
             builder: (BuildContext context) => AvailableSpeakers()))*/
