@@ -93,3 +93,4 @@ Project of the Arduino side could be found in `/arduino` folder, but there is a 
 "# OriginalSoundCrush" 
 "# OriginalSoundCrush" 
 "# OriginalSoundCrush" 
+"# updated-Sound-Crush-app" 
