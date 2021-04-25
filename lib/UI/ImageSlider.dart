@@ -1012,14 +1012,24 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_advanced_networkimage/provider.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:flutter_bluetooth_serial_example/AvailableSpeakers.dart';
 import 'package:flutter_bluetooth_serial_example/ConnectionScreen.dart';
+import 'package:flutter_bluetooth_serial_example/SpeakerJson.dart';
 import 'package:flutter_bluetooth_serial_example/main.dart';
+import 'package:flutter_bluetooth_serial_example/SplashScreen.dart';
+
+import '../BluetoothDeviceListEntry.dart';
+import 'BlueSlider.dart';
+
+
 List images = ["bzoom.png","M7.jpg","Macron.png","bzoom.png","Macron.png","M7.jpg"];
 PageController pageController;
 bool connected= false;
-String connectedInfo;
+String connectedInfo ;
 bool loading = false;
+
 
  class ImageSlider extends StatefulWidget {
    @override
@@ -1066,11 +1076,10 @@ bool loading = false;
            aspectRatio: 1,
            child: PageView.builder(
                controller: pageController ,
-               itemCount: images.length,
+               itemCount: filteredList.length,
                  scrollDirection: Axis.horizontal,
                  itemBuilder: (context, index){
-                 print(pageOffset);
-                 print(index);
+                   BluetoothDiscoveryResult result =filteredList[index];
                /*  double scale = max(viewportFraction,
                      (1 - (pageOffset - index).abs()) + viewportFraction);
 
@@ -1093,14 +1102,149 @@ bool loading = false;
 
                    alignment: Alignment(0.0, -0.5),
                        child: InkWell(
-                         onTap: (){
-                           setState(() {
-                             connected = connected?connected=false:true;
-                           });
+                         onTap: ()async{
+                             try {
+                               bool bonded = false;
+
+                               /// Disconnect Device
+                               if (result.device.isBonded) {
+                                 print('Unbonding from ${result.device.address}...');
+
+                                 await FlutterBluetoothSerial.instance
+                                     .removeDeviceBondWithAddress(result.device.address);
+                                 print('Unbonding from ${result.device.address} has succed');
+                               }   //TODO  remove "Disconnect" functionality from here
+
+                               /// Connect
+                               else {
+                                 print('Bonding with ${result.device.address}...');
+                                 bonded = await FlutterBluetoothSerial.instance
+                                     .bondDeviceAtAddress(result.device.address);
+                                 print(
+                                     'Bonding with ${result.device.address} has ${bonded ? 'succed' : 'failed'}.');
+                                /* if(bonded!=false){*//// add navigator
+                                   // return Navigator.push(context, MaterialPageRoute(builder: (context)=>FinalPlay()));
+                                 if(bonded!=false){
+                                   setState(() {
+                                     connected = true;
+                                     connectedSpeakerImage = detectedSpeakersImagesList[index];
+                                     connectedSpeakerName = result.device.name;
+
+
+                                   });
+                                   Navigator.of(context).push(MaterialPageRoute(builder: (context)=> ConnectionScreen("Pairing\nSuccessful",
+                                       Flexible(
+                                         child: Column(
+                                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                           children: [
+                                             Flexible(
+                                               flex: 2,
+                                               child: Container(
+                                                 decoration: BoxDecoration(
+                                                     shape: BoxShape.circle,
+                                                     border:Border.all(color:Colors.transparent,width: 6)
+                                                 ),
+                                                 child: Image(image: detectedSpeakersImagesList[index],fit: BoxFit.contain,),
+                                                 width: MediaQuery.of(context).size.width,
+                                                 height: MediaQuery.of(context).size.height * 0.30,
+                                               ),
+                                             ),
+
+
+                                             Text("${result.device.name}\nConnected".toUpperCase(),style: TextStyle(fontSize: SizeConfig.blockSizeVertical * 2.5,fontWeight: FontWeight.w700 ),textAlign: TextAlign.center,)
+
+                                           ],
+                                         ),
+                                       ),Image.asset(" assets/check.png",color: greenColor,))));
+                                 }
+
+
+
+
+                               }
+                               setState(() {
+                                 /// dont understand what actually happeneing here
+                                 results[results.indexOf(result)] = BluetoothDiscoveryResult(
+                                     device: BluetoothDevice(
+                                       name: result.device.name ?? '',
+                                       address: result.device.address,
+                                       type: result.device.type,
+                                       bondState: bonded
+                                           ? BluetoothBondState.bonded
+                                           : BluetoothBondState.none,
+                                     ),
+                                     rssi: result.rssi);
+                                 filteredList[filteredList.indexOf(result)] = BluetoothDiscoveryResult(
+                                     device: BluetoothDevice(
+                                       name: result.device.name ?? '',
+                                       address: result.device.address,
+                                       type: result.device.type,
+                                       bondState: bonded
+                                           ? BluetoothBondState.bonded
+                                           : BluetoothBondState.none,
+                                     ),
+                                     rssi: result.rssi);
+                               });
+                             } catch (ex) {
+                               /*showDialog(
+                                 context: context,
+                                 builder: (BuildContext context) {
+                                   return AlertDialog(
+                                     title: const Text('Error occured while bonding'),
+                                     content: Text("${ex.toString()}"),
+                                     actions: <Widget>[
+                                       new FlatButton(
+                                         child: new Text("Close"),
+                                         onPressed: () {
+                                           Navigator.of(context).pop();
+                                         },
+                                       ),
+                                     ],
+                                   );
+                                 },
+                               );*/
+                               Navigator.of(context).push(MaterialPageRoute(builder: (context)=> ConnectionScreen("Pairing Failed",
+                                   Flexible(
+                                     child: Column(
+                                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                       children: [
+                                         Flexible(
+                                           flex: 2,
+                                           child: Container(
+                                             decoration: BoxDecoration(
+                                                 shape: BoxShape.circle,
+                                                 border:Border.all(color:Colors.red[700],width: 6)
+                                             ),
+                                             child: Image(image: detectedSpeakersImagesList[index],fit: BoxFit.contain,),
+                                             width: MediaQuery.of(context).size.width,
+                                             height: MediaQuery.of(context).size.height * 0.30,
+                                           ),
+                                         ),
+
+                                         Icon(Icons.error, color: Colors.red[700],size: SizeConfig.screenHeight * 0.05,),
+                                         Flexible(
+                                           child: Container(
+                                             padding: EdgeInsets.all(7),
+                                             width: SizeConfig.screenWidth * 0.50,
+                                             height: SizeConfig.screenHeight * 0.10,
+                                             decoration: BoxDecoration(
+                                               border: Border.all(color:Colors.grey[500]),
+                                               color: Colors.grey[350],
+                                               borderRadius: BorderRadius.circular(10),
+                                             ),
+                                             child: Center(child: Text("Make sure your device is\n\nturned on & ready to pair",style: TextStyle(fontWeight: FontWeight.bold),)),
+                                           ),
+                                         )
+                                         ,
+                                       ],
+                                     ),
+                                   ),Icon(Icons.search_outlined ,color: greenColor,size: 35,))));
+                             }
+
 
                             /*
                              connectedInfo = "${images[index]}";*/
-                             Navigator.of(context).push(MaterialPageRoute(builder: (context)=> ConnectionScreen(connected?"Pairing\nSuccessful": "Pairing Failed",
+                             /*Navigator.of(context).push(MaterialPageRoute(builder: (context)=> ConnectionScreen(connected?"Pairing\nSuccessful": "Pairing Failed",
                                  Flexible(
                                    child: Column(
                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1112,13 +1256,15 @@ bool loading = false;
                                               shape: BoxShape.circle,
                                               border:Border.all(color:connected?Colors.transparent:Colors.red[700],width: 6)
                                             ),
-                                           child: Image.asset("assets/${images[index]}"),  width: MediaQuery.of(context).size.width,height: MediaQuery.of(context).size.height * 0.30,
+                                           child: Image(image: detectedSpeakersImagesList[index],fit: BoxFit.contain,),
+                                            width: MediaQuery.of(context).size.width,
+                                            height: MediaQuery.of(context).size.height * 0.30,
                                          ),
                                       ),
 
                                        connected?Text(" "):Icon(Icons.error, color: Colors.red[700],size: SizeConfig.screenHeight * 0.05,),
                                        connected?
-                                       Text("${images[index].substring(0,(images[index].length - 4))}\nConnected".toUpperCase(),style: TextStyle(fontSize: SizeConfig.blockSizeVertical * 2.5,fontWeight: FontWeight.w700 ),textAlign: TextAlign.center,):
+                                       Text("${result.device.name}\nConnected".toUpperCase(),style: TextStyle(fontSize: SizeConfig.blockSizeVertical * 2.5,fontWeight: FontWeight.w700 ),textAlign: TextAlign.center,):
                                        Flexible(
                                          child: Container(
                                            padding: EdgeInsets.all(7),
@@ -1135,7 +1281,7 @@ bool loading = false;
                                        ,
                                      ],
                                    ),
-                                 ), connected?Image.asset("assets/check.png",color: greenColor,):Icon(Icons.search_outlined ,color: greenColor,size: 35,))));
+                                 ), connected?Image.asset(" assets/check.png",color: greenColor,):Icon(Icons.search_outlined ,color: greenColor,size: 35,))));*/
 
                          },
                          child: Container(
@@ -1150,10 +1296,7 @@ bool loading = false;
                                  )
                                ]
                            ),
-                           child: Image.asset("assets/${images[index]}",
-
-                             fit:BoxFit.fill,
-                             /*alignment: Alignment((pageOffset - index).abs() * 0.5, 0),*/),
+                           child:Image(image: detectedSpeakersImagesList[index],fit: BoxFit.fill,),
                          ),
                        ),),
                        AnimatedOpacity(
@@ -1161,7 +1304,67 @@ bool loading = false;
                          opacity: pageOffset == index? 1: 0,
                          child: Align(
                            alignment: Alignment(0.0,0.5),
-                           child: Text("${images[index].substring(0,(images[index].length - 4))}".toUpperCase(),style: TextStyle(fontSize: 25),),
+                           child:BluetoothDeviceListEntry(
+                             device: result.device,
+                             rssi: result.rssi,
+                             onTap: () async {
+                              /* try {
+                                 bool bonded = false;
+
+                                 /// Disconnect Device
+                                 if (result.device.isBonded) {
+                                   print('Unbonding from ${result.device.address}...');
+                                   await FlutterBluetoothSerial.instance
+                                       .removeDeviceBondWithAddress(result.device.address);
+                                   print('Unbonding from ${result.device.address} has succed');
+                                 }   //TODO  remove "Disconnect" functionality from here
+
+                                 /// Connect
+                                 else {
+                                   print('Bonding with ${result.device.address}...');
+                                   bonded = await FlutterBluetoothSerial.instance
+                                       .bondDeviceAtAddress(result.device.address);
+                                   print(
+                                       'Bonding with ${result.device.address} has ${bonded ? 'succed' : 'failed'}.');
+                                   if(bonded!=false){/// add navigator
+                                    // return Navigator.push(context, MaterialPageRoute(builder: (context)=>FinalPlay()));
+                                   }
+
+                                 }
+                                 setState(() {
+                                   results[results.indexOf(result)] = BluetoothDiscoveryResult(
+                                       device: BluetoothDevice(
+                                         name: result.device.name ?? '',
+                                         address: result.device.address,
+                                         type: result.device.type,
+                                         bondState: bonded
+                                             ? BluetoothBondState.bonded
+                                             : BluetoothBondState.none,
+                                       ),
+                                       rssi: result.rssi);
+                                 });
+                               } catch (ex) {
+                                 showDialog(
+                                   context: context,
+                                   builder: (BuildContext context) {
+                                     return AlertDialog(
+                                       title: const Text('Error occured while bonding'),
+                                       content: Text("${ex.toString()}"),
+                                       actions: <Widget>[
+                                         new FlatButton(
+                                           child: new Text("Close"),
+                                           onPressed: () {
+                                             Navigator.of(context).pop();
+                                           },
+                                         ),
+                                       ],
+                                     );
+                                   },
+                                 );
+                               }*/ /// dont remove it untill blutooth connectivity test done  with 4 5 other speakers.
+                             },
+                           )
+                           /*Text(myspeakerImageBase64MapList[index].spkrName.toUpperCase(),style: TextStyle(fontSize: 25),),*/
                          ),
                        ),
 
@@ -1177,19 +1380,6 @@ bool loading = false;
    }
  }
 
- class AvailableDevicesList extends StatelessWidget {
-   ScrollController _scrollController = ScrollController();
-   @override
-   Widget build(BuildContext context) {
-     return Container(
-         padding: EdgeInsets.fromLTRB(SizeConfig.blockSizeHorizontal * 3, 0, SizeConfig.blockSizeHorizontal * 8, SizeConfig.blockSizeHorizontal * 2),
-         height: SizeConfig.screenHeight * 0.17,
-         child: ListView.separated(
-           itemCount: images.length,
-           itemBuilder: (context,index)=> Text(images[index],style: TextStyle(fontSize: SizeConfig.blockSizeVertical * 2,fontWeight: FontWeight.w500),),
-           separatorBuilder: (context,index)=> Divider(thickness: 2,color: Colors.grey[400],),
-         ));
-   }
- }
+
 
  

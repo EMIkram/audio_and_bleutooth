@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
 
 import 'package:deepmusicfinder/deepmusicfinder.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_advanced_networkimage/provider.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:flutter_bluetooth_serial_example/main.dart';
 import 'package:sleek_circular_slider/sleek_circular_slider.dart';
 import 'package:volume_control/volume_control.dart';
@@ -15,12 +18,16 @@ import 'package:flutter/services.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 
+import 'UI/BlueSlider.dart';
+
 
 
 // void main() => runApp(MyApp());
 
 bool equilizer = false;
 class FinalPlay extends StatefulWidget {
+
+
   @override
   _FinalPlayState createState() => _FinalPlayState();
 }
@@ -46,6 +53,8 @@ class _FinalPlayState extends State<FinalPlay> with SingleTickerProviderStateMix
   Animation knobAnimation;
 
 
+
+
   @override
   void initState() {
     knobAnimationController = AnimationController(vsync: this, duration: Duration(seconds:4 ),);
@@ -55,6 +64,7 @@ class _FinalPlayState extends State<FinalPlay> with SingleTickerProviderStateMix
     initPlatformState();
     initVolumeState();
   }
+
   Future<void> initVolumeState() async {
     if (!mounted) return;
 
@@ -383,7 +393,8 @@ class _FinalPlayState extends State<FinalPlay> with SingleTickerProviderStateMix
         height: SizeConfig.screenHeight,
         width: SizeConfig.screenWidth,
         color: Colors.grey[800],
-        child: Stack(
+        child:
+        Stack(
           children: [
             AppBar(
               backgroundColor: Colors.transparent,
@@ -406,9 +417,11 @@ class _FinalPlayState extends State<FinalPlay> with SingleTickerProviderStateMix
                 children: [
 
                   Flexible(
-                    child: Image.asset("assets/bzoom.png",alignment: Alignment.topCenter),
+                    child: Image(image: connectedSpeakerImage,alignment: Alignment.topCenter,)
+                   // Image.asset("assets/bzoom.png",alignment: Alignment.topCenter),
                   ),
-                  Text("Bzoom",style: TextStyle(color: Colors.white,),),
+                  Text(connectedSpeakerName,style: TextStyle(color: Colors.white,),),
+
                   Knob(0.39,0.24,0.23,iconChnage(Colors.grey[800], Colors.white, mute?Icons.volume_mute_outlined:Icons.volume_up,35.0,
                           (){
                         setState(() {

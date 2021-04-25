@@ -28,7 +28,7 @@ class ExampleApplication extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        home: SpeakerStorageJson(),
+        home: SplashScreen(),
       routes: <String, WidgetBuilder> {
         'signin': (BuildContext context) => new SigninScreen(),
         'signup' : (BuildContext context) => new SignupScreen(),
@@ -163,8 +163,6 @@ class ConstantWidgets{
   Widget commonScaffold(BuildContext context,widget, {drawer}){
 
    SizeConfig().init(context);
-   print({MediaQuery.of(context).padding});
-   print("screenwidth${SizeConfig.screenWidth}");
     return SafeArea(
         child: Scaffold(
           body: widget,
@@ -175,7 +173,7 @@ class ConstantWidgets{
     );
   }
 
-  Widget availableScreenLayout(BuildContext context,title,widget,avatarWidget, {function}){
+  Widget availableScreenLayout(BuildContext context,title,widget,avatarWidget, {Function function}){
     return  constantWidgets.commonScaffold(context,
       Container(
         width: SizeConfig.screenWidth ,
@@ -220,20 +218,20 @@ class ConstantWidgets{
              child: CircleAvatar(
                radius: 43,
                backgroundColor:Colors.white,
-               child: InkWell(
-                 onTap: (){
-                   function;
-                   /// function
-                 },
-                 child: CircleAvatar(
-                   radius: 38,
-                   backgroundColor: Colors.grey[800],
-                   child: avatarWidget
+                 child: InkWell(
+                   child: CircleAvatar(
+                     radius: 38,
+                     backgroundColor: Colors.grey[800],
+                     child: avatarWidget
                 /*   Icon(
-                     icon ,color: greenColor,size: 35,
-                   )*/
-                     ),
-                   ),
+                       icon ,color: greenColor,size: 35,
+                     )*/
+                       ),
+                   onTap: (){
+                     Navigator.of(context).push(MaterialPageRoute(builder: (context)=> AvailableSpeakers()));
+                   },
+                 ),
+
                  ),
                ),
 
@@ -548,8 +546,7 @@ class _KnobState extends State<Knob> {
                           ///TODO:
                           setState(() {
                             endAngle = value - 0.1;
-                            print(value);
-                            print(endAngle);
+
                           });
                           /* _setVolumeValue = value;
                   VolumeController.setVolume(_setVolumeValue);

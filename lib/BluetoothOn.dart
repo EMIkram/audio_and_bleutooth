@@ -78,12 +78,16 @@ class _BluetoothONState extends State<BluetoothON> with SingleTickerProviderStat
       });
     });
 
+
     // Listen for further state changes
     FlutterBluetoothSerial.instance
         .onStateChanged()
         .listen((BluetoothState state) {
       setState(() {
         _bluetoothState = state;
+        if(!state.isEnabled) {
+          Navigator.of(context).push(MaterialPageRoute(builder: (context)=> BluetoothON()));
+        }
 
         // Discoverable mode is disabled when Bluetooth gets disabled
         _discoverableTimeoutTimer = null;
@@ -91,6 +95,7 @@ class _BluetoothONState extends State<BluetoothON> with SingleTickerProviderStat
       });
     });
   }
+
 
   @override
   void dispose() {

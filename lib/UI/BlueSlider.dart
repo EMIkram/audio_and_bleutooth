@@ -2,14 +2,18 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:flutter_advanced_networkimage/provider.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:flutter_bluetooth_serial_example/AvailableSpeakers.dart';
+import 'package:flutter_bluetooth_serial_example/FinalPlay.dart';
 import 'package:flutter_bluetooth_serial_example/main.dart';
 import 'package:location/location.dart';
 
 import '../SearchingSpeakers.dart';
+import '../SplashScreen.dart';
 
-
+AdvancedNetworkImage connectedSpeakerImage;
+String connectedSpeakerName;
 class CustomRangeSelector extends StatefulWidget {
   final double start;
   final Function(double start) onStartChange;
@@ -36,6 +40,7 @@ class _CustomRangeSelectorState extends State<CustomRangeSelector> with SingleTi
   bool _serviceEnabled;
   PermissionStatus _permissionGranted;
   LocationData _locationData;
+
 
   future()async{
     _serviceEnabled = await location.serviceEnabled();
@@ -133,17 +138,41 @@ class _CustomRangeSelectorState extends State<CustomRangeSelector> with SingleTi
     setState(() {
     startPosition = widget.width * 0.25;
     });
+    //Future<List<BluetoothDevice>> bondedDevices()async=> await FlutterBluetoothSerial.instance.getBondedDevices();
+
+
     future()async{
                     await FlutterBluetoothSerial.instance.requestEnable();
                  }
-                 future().then((_) async{/// again uncomment it
+                 future().then((_) async{
+                   FlutterBluetoothSerial.instance.getBondedDevices().then((value) {
+                     var index= value.indexWhere((element) => speakersExactName.contains(element.name.toUpperCase()));
+                     var mapindex=  speakerCacheImageMapListExactName.indexWhere((element) => (element.spkrName.contains(value[index].name)));
+                     bool connectedSpeaker = value[index].isConnected;
+                    if(connectedSpeaker){
 
-                    if(await FlutterBluetoothSerial.instance.isEnabled){
+                      setState(() {
+                        connectedSpeakerImage =speakerCacheImageMapListExactName[mapindex].imgBase64Bytes;
+                        connectedSpeakerName = speakerCacheImageMapListExactName[mapindex].spkrName;
+                      });
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) =>FinalPlay()),
+                      );
+                    }
+                    else{
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) =>AvailableSpeakers()),
                       );
+
                     }
+                   });
+
+
+
+
+
                  } );
    /* Navigator.of(context).push(MaterialPageRoute(builder: (context)=> AvailableSpeakers()));*/
     },

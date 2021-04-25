@@ -16,11 +16,16 @@ import 'package:path/path.dart' as p;
 
 import 'dart:convert';
 
+import 'SplashScreen.dart';
+
 
 
 
 
 Directory _appDocsDir;
+File imageFile;
+
+
 
  class SpeakersApiData{
    static const String url = 'http://soundcrush.pk/wp-content/themes/speakers.json';
@@ -30,34 +35,37 @@ Directory _appDocsDir;
 
 
        String fileName = "SpeakersData.json";
+       String imagebytesFilename = "Speakersimagebytes.json";
 
        var  dir = await getTemporaryDirectory(); /// for ios directory name has to change
       /// for image storage
 
-       File file = File(dir.path + "/" + fileName);
+       File files = File(dir.path + "/" + fileName);
+       File imagesbytesfile = File(dir.path + "/" + imagebytesFilename);
 
-       if(file.existsSync()){
+       if(files.existsSync()){
          print("cached from device");
-         // final data = file.readAsStringSync();
-          final apiData = json.decode(file.readAsStringSync());
+         //final data = file.readAsBytesSync();
+
+          final apiData = json.decode(files.readAsStringSync());
 
 
+         for(int i =0 ;i <apiData[0]["data"].length; i++){
+          //final image = Image.network(apiData[0]["data"][i]["image"]);
+         final imageBytes =  await imagesbytesfile.writeAsBytes(apiData[0]["data"][i]["image"].bodyBytes);
+         final imageBytess =  await imageBytes.readAsBytesSync();
+           final encodedImage = convert.base64Encode(imageBytess);
+           myspeakerImageBase64List.add(encodedImage);
+
+        }
           return apiData;
        }else{
          print("fetched from internet");
          final response = await http.get(url);
          if (200 == response.statusCode) {
            //save to file
-           file.writeAsStringSync(response.body , flush: true , mode: FileMode.write);
-
-
-
-
-
-
-
+           files.writeAsStringSync(response.body, flush: true , mode: FileMode.write);
            final apiBody = json.decode(response.body);
-
            return apiBody;
          } else {
            return json.decode(response.body);
@@ -69,13 +77,8 @@ Directory _appDocsDir;
 
 
    }
-  // File fileFromDocsDir(String filename) {
-  //
-  //    String pathName = p.join(_appDocsDir.path, filename);
-  //    File(pathName);
-  //    return File(pathName);
-  //  }
-/// for image storage purpose
+
+
  }
 
 
@@ -90,10 +93,28 @@ class SpeakerStorageJson extends StatefulWidget {
 class _SpeakerStorageJsonState extends State<SpeakerStorageJson> {
   //
   var apiImages;
-  Future cachedNetworkImg(){
+  var apiImagesList =[];
+ @override
+  void initState() {
+   
+   SpeakersApiData().getSpeakerData().then((value) {
+     for(int i =0 ;i <value[0]["data"].length; i++){
+       setState(() {
+         speakersName.add(value[0]["data"][i]["name"]);
+       });
 
+
+        AdvancedNetworkImage(
+            value[0]["data"][i]["image"],
+         useDiskCache: true
+        );
+     }
+     print("filedataseerat $speakersName");
+
+   });
+    // TODO: implement initState
+    super.initState();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -112,14 +133,19 @@ class _SpeakerStorageJsonState extends State<SpeakerStorageJson> {
                 (
                 itemCount: snapshot.data[0]["data"].length,
                   itemBuilder: (context,index){
+                  final encodeimage = convert.Base64Encoder().convert((snapshot.data[0]["data"][index]["image"]));
+                  final decodeimage = convert.base64Decode(encodeimage);
                   return ListTile(
                     title: Text(snapshot.data[0]["data"][index]["name"]),
-                    subtitle: Image(
+                    subtitle: Image.memory(decodeimage),
+
+
+                    /*Image(
                       image:  AdvancedNetworkImage(
                         snapshot.data[0]["data"][index]["image"] ,
 
                       ),
-                    ),
+                    ),*/
                     /*subtitle: CachedNetworkImage(
                     
                       placeholder: (context, url) => CircularProgressIndicator(),
